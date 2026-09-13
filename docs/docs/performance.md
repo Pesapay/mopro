@@ -460,3 +460,18 @@ The `speakup` adapter pins [`Pesapay/mpz@0cc76da`](https://github.com/Pesapay/mp
 :::caution
 Set `chunk_cap` on mobile. With mpz's default (15M sVOLE per chunk) a 64 KB session peaks near 1.7 GB and took 5.1–7.1 s on the iPhone 14 Pro Max; `2_000_000` brings it to 1.55 s at the cost of more verifier→prover traffic (2.5 MB instead of 0.9 MB at 64 KB).
 :::
+
+### SpeakUp vs emp-zk
+
+[emp-zk](https://github.com/emp-toolkit/emp-zk) (Wolverine/QuickSilver, `v1.0.0-alpha.1` line) is the other interactive, designated-verifier VOLE-ZK stack. The `empzk` adapter builds it for iOS/Android through [`Pesapay/emp-zk-mopro`](https://github.com/Pesapay/emp-zk-mopro) and proves the same statement with emp-tool's SHA-256 circuit. SpeakUp proves a WebAssembly guest; emp-zk runs a hand-written circuit.
+
+iPhone 14 Pro Max, `-compare-bench -rounds 6` in the iOS template (SpeakUp and emp-zk alternated per round, median of 6 after a warm-up, SpeakUp `chunk_cap = 2_000_000`):
+
+| sha256 input | SpeakUp | emp-zk | P→V / V→P (SpeakUp) | P→V / V→P (emp-zk) |
+| :----------: | :-----: | :----: | :-----------------: | :----------------: |
+| 1 KB  |   42 ms |  149 ms | 350 KB / 136 KB | 198 KB / 489 KB |
+| 4 KB  |  111 ms |  205 ms | 489 KB / 269 KB | 346 KB / 489 KB |
+| 16 KB |  407 ms |  383 ms | 1.0 MB / 672 KB | 939 KB / 489 KB |
+| 64 KB | 1516 ms | 1250 ms | 3.2 MB / 2.4 MB | 3.2 MB / 875 KB |
+
+On a MacBook Pro M4 Pro the gap at large inputs is wider (emp-zk 257 ms / 832 ms vs SpeakUp 393 ms / 1482 ms at 16 / 64 KB); emp-zk carries ~90–150 ms of fixed setup, so SpeakUp is faster for small statements.
