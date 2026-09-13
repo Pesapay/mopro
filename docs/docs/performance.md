@@ -439,3 +439,24 @@ On iOS, the benchmark runs using the "My Mac (Designed for iPad)" target. On And
 :::info
 **Details:** [zkmopro/mopro#414](https://github.com/zkmopro/mopro/issues/414)
 :::
+
+## SpeakUp
+
+[SpeakUp](https://github.com/ethereum/speakup) is an interactive, designated-verifier VOLE-ZK zkVM that proves WebAssembly guests ([`mpz` `vm-zk`](https://github.com/ethereum/mpz)). There is no transferable proof object: the prover and the verifier run one session together. The numbers below time the whole session (OT setup, proving, and verification) with both parties on the same device over loopback TCP, using the SpeakUp demo's `sha256` guest over a private message.
+
+The `speakup` adapter pins [`Pesapay/mpz@0cc76da`](https://github.com/Pesapay/mpz/tree/pesa/arm-pmull): the SpeakUp demo's mpz revision plus an aarch64 PMULL backend for GF(2¹²⁸). Upstream mpz has PCLMULQDQ (x86) and simd128 (wasm) backends, but every ARM target (iOS, Android, Apple silicon) falls back to software arithmetic.
+
+| sha256 input | iOS<br/>(PMULL) | iOS<br/>(upstream mpz) | macOS native<br/>(PMULL) | Web<br/>(Laptop) |
+| :----------: | :-------------: | :--------------------: | :----------------------: | :--------------: |
+| 1 KB  |   54 ms |   100 ms |   35 ms |  169 ms |
+| 4 KB  |  114 ms |   278 ms |  106 ms |  215 ms |
+| 16 KB |  393 ms |   832 ms |  393 ms |  768 ms |
+| 64 KB | 1551 ms |  2910 ms | 1482 ms | 2890 ms |
+
+- iOS: iPhone 14 Pro Max, release build of the `mopro create` iOS template ("Prove SpeakUp"), `chunk_cap = 2_000_000`, median of 3 runs after a warm-up.
+- macOS native and Web: MacBook Pro M4 Pro (14 cores), mpz default `chunk_cap`, median of 4 runs. Web is the [SpeakUp browser demo](https://ethereum.github.io/speakup/demo/) (threaded wasm with simd128) in Chromium.
+- Wire traffic is the same on every platform: 350 KB prover→verifier at 1 KB, 3.2 MB at 64 KB.
+
+:::caution
+Set `chunk_cap` on mobile. With mpz's default (15M sVOLE per chunk) a 64 KB session peaks near 1.7 GB and took 5.1–7.1 s on the iPhone 14 Pro Max; `2_000_000` brings it to 1.55 s at the cost of more verifier→prover traffic (2.5 MB instead of 0.9 MB at 64 KB).
+:::

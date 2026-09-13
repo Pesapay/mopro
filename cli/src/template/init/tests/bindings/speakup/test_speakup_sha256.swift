@@ -1,0 +1,15 @@
+import Foundation
+// GENERATED LIB IMPORT PLACEHOLDER
+
+do {
+    let result = try speakupProveSha256Loopback(len: 1024, chunkCap: nil)
+    assert(result.verifierAccepted, "Verifier should accept the proof")
+    assert(result.digestHex.count == 64, "Digest should be 32 bytes of hex")
+    assert(result.proverSentBytes > 0, "Prover should have sent protocol traffic")
+} catch let error as MoproError {
+    print("MoproError: \(error)")
+    throw error
+} catch {
+    print("Unexpected error: \(error)")
+    throw error
+}

@@ -9,4 +9,6 @@ pub enum MoproError {
     NoirError(String),
     #[error("GnarkError: {0}")]
     GnarkError(String),
+    #[error("SpeakupError: {0}")]
+    SpeakupError(String),
 }

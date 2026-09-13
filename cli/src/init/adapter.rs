@@ -1,4 +1,4 @@
-use super::{circom::Circom, gnark::Gnark, halo2::Halo2, noir::Noir};
+use super::{circom::Circom, gnark::Gnark, halo2::Halo2, noir::Noir, speakup::Speakup};
 use crate::init::proving_system::{replace_test_bindings_lib_import, ProvingSystem};
 use crate::{select::multi_select, style};
 
@@ -8,14 +8,16 @@ pub enum Adapter {
     Halo2,
     Noir,
     Gnark,
+    Speakup,
     NoneOfTheAbove,
 }
 
-pub(super) const ADAPTERS: [Adapter; 5] = [
+pub(super) const ADAPTERS: [Adapter; 6] = [
     Adapter::Circom,
     Adapter::Halo2,
     Adapter::Noir,
     Adapter::Gnark,
+    Adapter::Speakup,
     Adapter::NoneOfTheAbove,
 ];
 
@@ -26,6 +28,7 @@ impl Adapter {
             Adapter::Halo2 => "halo2",
             Adapter::Noir => "noir",
             Adapter::Gnark => "gnark",
+            Adapter::Speakup => "speakup",
             Adapter::NoneOfTheAbove => "none of the above",
         }
     }
@@ -88,6 +91,9 @@ impl AdapterSelector {
         if self.contains(Adapter::Gnark) {
             Gnark::dep_template(cargo_toml_path)?;
         }
+        if self.contains(Adapter::Speakup) {
+            Speakup::dep_template(cargo_toml_path)?;
+        }
         Ok(())
     }
 
@@ -104,6 +110,9 @@ impl AdapterSelector {
         if self.contains(Adapter::Gnark) {
             Gnark::build_dep_template(cargo_toml_path)?;
         }
+        if self.contains(Adapter::Speakup) {
+            Speakup::build_dep_template(cargo_toml_path)?;
+        }
         Ok(())
     }
 
@@ -119,6 +128,9 @@ impl AdapterSelector {
         }
         if self.contains(Adapter::Gnark) {
             Gnark::dev_dep_template(cargo_toml_path)?;
+        }
+        if self.contains(Adapter::Speakup) {
+            Speakup::dev_dep_template(cargo_toml_path)?;
         }
         Ok(())
     }
@@ -147,6 +159,11 @@ impl AdapterSelector {
         } else {
             Gnark::lib_stub_template(lib_rs_path)?;
         }
+        if self.contains(Adapter::Speakup) {
+            Speakup::lib_template(lib_rs_path)?;
+        } else {
+            Speakup::lib_stub_template(lib_rs_path)?;
+        }
         Ok(())
     }
 
@@ -162,6 +179,9 @@ impl AdapterSelector {
         }
         if self.contains(Adapter::Gnark) {
             Gnark::build_template(build_rs_path)?;
+        }
+        if self.contains(Adapter::Speakup) {
+            Speakup::build_template(build_rs_path)?;
         }
         Ok(())
     }
@@ -182,6 +202,9 @@ impl AdapterSelector {
         }
         if self.contains(Adapter::Gnark) {
             Gnark::build_bindings_lib(bindings_lib_path, project_name)?;
+        }
+        if self.contains(Adapter::Speakup) {
+            Speakup::build_bindings_lib(bindings_lib_path, project_name)?;
         }
         // copy ffi bindings test
         let ffi_bindings_dir_path = format!("{}/{}", bindings_lib_path, "ffi");

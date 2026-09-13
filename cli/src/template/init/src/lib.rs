@@ -43,3 +43,5 @@ mod uniffi_tests {
 // NOIR_TEMPLATE
 
 // GNARK_TEMPLATE
+
+// SPEAKUP_TEMPLATE

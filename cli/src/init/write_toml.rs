@@ -24,12 +24,14 @@ anyhow = "1.0.99"
 # HALO2_DEPENDENCIES
 # NOIR_DEPENDENCIES
 # GNARK_DEPENDENCIES
+# SPEAKUP_DEPENDENCIES
 
 [build-dependencies]
 # CIRCOM_BUILD_DEPENDENCIES
 # HALO2_BUILD_DEPENDENCIES
 # NOIR_BUILD_DEPENDENCIES
 # GNARK_BUILD_DEPENDENCIES
+# SPEAKUP_BUILD_DEPENDENCIES
 
 [dev-dependencies]
 mopro-ffi = { version = "=0.3.7", features = ["uniffi-tests"] }
@@ -38,6 +40,7 @@ mopro-ffi = { version = "=0.3.7", features = ["uniffi-tests"] }
 # HALO2_DEV_DEPENDENCIES
 # NOIR_DEV_DEPENDENCIES
 # GNARK_DEV_DEPENDENCIES
+# SPEAKUP_DEV_DEPENDENCIES
 
 [target.wasm32-unknown-unknown.dependencies]
 mopro-ffi = { version = "=0.3.7", features = ["wasm"] }

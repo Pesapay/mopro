@@ -15,6 +15,7 @@ mod gnark;
 mod halo2;
 mod noir;
 mod proving_system;
+mod speakup;
 mod write_toml;
 
 pub fn init_project(

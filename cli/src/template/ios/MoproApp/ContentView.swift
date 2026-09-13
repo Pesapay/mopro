@@ -16,6 +16,7 @@ struct ContentView: View {
   @State private var isHalo2VerifyButtonEnabled = false
   @State private var isNoirProveButtonEnabled = true
   @State private var isNoirVerifyButtonEnabled = false
+  @State private var isSpeakupProveButtonEnabled = true
   @State private var generatedCircomProof: CircomProof?
   @State private var circomPublicInputs: [String]?
   @State private var generatedRapidsnarkProof: CircomProof?
@@ -66,6 +67,9 @@ struct ContentView: View {
         .accessibilityIdentifier("proveNoir")
       Button("Verify Noir", action: runNoirVerifyAction).disabled(!isNoirVerifyButtonEnabled)
         .accessibilityIdentifier("verifyNoir")
+      Button("Prove SpeakUp (sha256)", action: runSpeakupProveAction).disabled(
+        !isSpeakupProveButtonEnabled
+      ).accessibilityIdentifier("proveSpeakup")
 
       ScrollView {
         Text(textViewText)
@@ -75,6 +79,9 @@ struct ContentView: View {
       .frame(height: 200)
     }
     .padding()
+    .onAppear {
+      if ProcessInfo.processInfo.arguments.contains("-speakup-bench") { runSpeakupProveAction() }
+    }
   }
 }
 
@@ -452,6 +459,40 @@ extension ContentView {
           textViewText += "Verification failed: \(error.localizedDescription)\n"
         }
       }
+    }
+  }
+}
+
+extension ContentView {
+  // Prover and verifier both on-device over loopback; median of 3 after a warm-up.
+  func runSpeakupProveAction() {
+    textViewText += "Proving SpeakUp sha256 (loopback)...\n"
+    isSpeakupProveButtonEnabled = false
+    let args = ProcessInfo.processInfo.arguments
+    // 2M sVOLE per chunk bounds peak memory; mpz's 15M default thrashes a phone at 64 KB.
+    let cap = args.firstIndex(of: "-speakup-cap").flatMap { UInt64(args[$0 + 1]) } ?? 2_000_000
+    DispatchQueue.global(qos: .userInitiated).async {
+      for len: UInt32 in [1024, 4096, 16384, 65536] {
+        do {
+          _ = try speakupProveSha256Loopback(len: len, chunkCap: cap)
+          var times: [UInt64] = []
+          var last: SpeakupBenchResult?
+          for _ in 0..<3 {
+            let r = try speakupProveSha256Loopback(len: len, chunkCap: cap)
+            times.append(r.totalMs)
+            last = r
+          }
+          let median = times.sorted()[1]
+          let line =
+            "speakup sha256 \(len / 1024) KB cap \(cap): \(median) ms \(times) | P->V \(last!.proverSentBytes / 1024) KB, V->P \(last!.proverReceivedBytes / 1024) KB | accepted \(last!.verifierAccepted)"
+          print(line)
+          DispatchQueue.main.async { textViewText += line + "\n" }
+        } catch {
+          print("speakup error: \(error)")
+          DispatchQueue.main.async { textViewText += "SpeakUp error: \(error)\n" }
+        }
+      }
+      DispatchQueue.main.async { isSpeakupProveButtonEnabled = true }
     }
   }
 }
