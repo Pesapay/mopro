@@ -1,4 +1,6 @@
-use super::{circom::Circom, gnark::Gnark, halo2::Halo2, noir::Noir, speakup::Speakup};
+use super::{
+    circom::Circom, empzk::Empzk, gnark::Gnark, halo2::Halo2, noir::Noir, speakup::Speakup,
+};
 use crate::init::proving_system::{replace_test_bindings_lib_import, ProvingSystem};
 use crate::{select::multi_select, style};
 
@@ -9,15 +11,17 @@ pub enum Adapter {
     Noir,
     Gnark,
     Speakup,
+    Empzk,
     NoneOfTheAbove,
 }
 
-pub(super) const ADAPTERS: [Adapter; 6] = [
+pub(super) const ADAPTERS: [Adapter; 7] = [
     Adapter::Circom,
     Adapter::Halo2,
     Adapter::Noir,
     Adapter::Gnark,
     Adapter::Speakup,
+    Adapter::Empzk,
     Adapter::NoneOfTheAbove,
 ];
 
@@ -29,6 +33,7 @@ impl Adapter {
             Adapter::Noir => "noir",
             Adapter::Gnark => "gnark",
             Adapter::Speakup => "speakup",
+            Adapter::Empzk => "empzk",
             Adapter::NoneOfTheAbove => "none of the above",
         }
     }
@@ -94,6 +99,9 @@ impl AdapterSelector {
         if self.contains(Adapter::Speakup) {
             Speakup::dep_template(cargo_toml_path)?;
         }
+        if self.contains(Adapter::Empzk) {
+            Empzk::dep_template(cargo_toml_path)?;
+        }
         Ok(())
     }
 
@@ -113,6 +121,9 @@ impl AdapterSelector {
         if self.contains(Adapter::Speakup) {
             Speakup::build_dep_template(cargo_toml_path)?;
         }
+        if self.contains(Adapter::Empzk) {
+            Empzk::build_dep_template(cargo_toml_path)?;
+        }
         Ok(())
     }
 
@@ -131,6 +142,9 @@ impl AdapterSelector {
         }
         if self.contains(Adapter::Speakup) {
             Speakup::dev_dep_template(cargo_toml_path)?;
+        }
+        if self.contains(Adapter::Empzk) {
+            Empzk::dev_dep_template(cargo_toml_path)?;
         }
         Ok(())
     }
@@ -164,6 +178,11 @@ impl AdapterSelector {
         } else {
             Speakup::lib_stub_template(lib_rs_path)?;
         }
+        if self.contains(Adapter::Empzk) {
+            Empzk::lib_template(lib_rs_path)?;
+        } else {
+            Empzk::lib_stub_template(lib_rs_path)?;
+        }
         Ok(())
     }
 
@@ -182,6 +201,9 @@ impl AdapterSelector {
         }
         if self.contains(Adapter::Speakup) {
             Speakup::build_template(build_rs_path)?;
+        }
+        if self.contains(Adapter::Empzk) {
+            Empzk::build_template(build_rs_path)?;
         }
         Ok(())
     }
@@ -205,6 +227,9 @@ impl AdapterSelector {
         }
         if self.contains(Adapter::Speakup) {
             Speakup::build_bindings_lib(bindings_lib_path, project_name)?;
+        }
+        if self.contains(Adapter::Empzk) {
+            Empzk::build_bindings_lib(bindings_lib_path, project_name)?;
         }
         // copy ffi bindings test
         let ffi_bindings_dir_path = format!("{}/{}", bindings_lib_path, "ffi");

@@ -1,2 +1,7 @@
 [unstable]
 build-std = ["panic_abort", "std"]
+
+[env]
+# One iOS deployment target for Rust, cc and vendored C/C++ (OpenSSL, emp-toolkit);
+# otherwise C objects target the SDK version and the link cannot resolve ___chkstk_darwin.
+IPHONEOS_DEPLOYMENT_TARGET = "15.0"

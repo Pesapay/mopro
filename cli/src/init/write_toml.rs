@@ -25,6 +25,7 @@ anyhow = "1.0.99"
 # NOIR_DEPENDENCIES
 # GNARK_DEPENDENCIES
 # SPEAKUP_DEPENDENCIES
+# EMPZK_DEPENDENCIES
 
 [build-dependencies]
 # CIRCOM_BUILD_DEPENDENCIES
@@ -32,6 +33,7 @@ anyhow = "1.0.99"
 # NOIR_BUILD_DEPENDENCIES
 # GNARK_BUILD_DEPENDENCIES
 # SPEAKUP_BUILD_DEPENDENCIES
+# EMPZK_BUILD_DEPENDENCIES
 
 [dev-dependencies]
 mopro-ffi = { version = "=0.3.7", features = ["uniffi-tests"] }
@@ -41,6 +43,7 @@ mopro-ffi = { version = "=0.3.7", features = ["uniffi-tests"] }
 # NOIR_DEV_DEPENDENCIES
 # GNARK_DEV_DEPENDENCIES
 # SPEAKUP_DEV_DEPENDENCIES
+# EMPZK_DEV_DEPENDENCIES
 
 [target.wasm32-unknown-unknown.dependencies]
 mopro-ffi = { version = "=0.3.7", features = ["wasm"] }

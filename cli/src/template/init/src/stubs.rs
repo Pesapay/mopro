@@ -220,3 +220,27 @@ macro_rules! speakup_stub {
         pub use speakup_stub::{speakup_prove_sha256_loopback, speakup_prove_sha256_remote, SpeakupBenchResult};
     };
 }
+
+#[macro_export]
+macro_rules! empzk_stub {
+    () => {
+        mod empzk_stub {
+            use crate::error::MoproError;
+
+            #[cfg_attr(feature = "uniffi", derive(uniffi::Record))]
+            pub struct EmpzkBenchResult {
+                pub digest_hex: String,
+                pub total_ms: u64,
+                pub prover_sent_bytes: u64,
+                pub prover_received_bytes: u64,
+                pub verifier_accepted: bool,
+            }
+
+            #[cfg_attr(feature = "uniffi", uniffi::export)]
+            pub fn empzk_prove_sha256_loopback(_len: u32) -> Result<EmpzkBenchResult, MoproError> {
+                panic!("emp-zk is not enabled in this build. Please select \"empzk\" adapter when initializing the project.");
+            }
+        }
+        pub use empzk_stub::{empzk_prove_sha256_loopback, EmpzkBenchResult};
+    };
+}

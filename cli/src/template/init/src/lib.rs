@@ -45,3 +45,5 @@ mod uniffi_tests {
 // GNARK_TEMPLATE
 
 // SPEAKUP_TEMPLATE
+
+// EMPZK_TEMPLATE

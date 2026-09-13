@@ -17,6 +17,7 @@ struct ContentView: View {
   @State private var isNoirProveButtonEnabled = true
   @State private var isNoirVerifyButtonEnabled = false
   @State private var isSpeakupProveButtonEnabled = true
+  @State private var isEmpzkProveButtonEnabled = true
   @State private var generatedCircomProof: CircomProof?
   @State private var circomPublicInputs: [String]?
   @State private var generatedRapidsnarkProof: CircomProof?
@@ -70,6 +71,9 @@ struct ContentView: View {
       Button("Prove SpeakUp (sha256)", action: runSpeakupProveAction).disabled(
         !isSpeakupProveButtonEnabled
       ).accessibilityIdentifier("proveSpeakup")
+      Button("Prove emp-zk (sha256)", action: runEmpzkProveAction).disabled(
+        !isEmpzkProveButtonEnabled
+      ).accessibilityIdentifier("proveEmpzk")
 
       ScrollView {
         Text(textViewText)
@@ -80,7 +84,10 @@ struct ContentView: View {
     }
     .padding()
     .onAppear {
-      if ProcessInfo.processInfo.arguments.contains("-speakup-bench") { runSpeakupProveAction() }
+      let args = ProcessInfo.processInfo.arguments
+      if args.contains("-speakup-bench") { runSpeakupProveAction() }
+      if args.contains("-empzk-bench") { runEmpzkProveAction() }
+      if args.contains("-compare-bench") { runCompareBenchAction() }
     }
   }
 }
@@ -493,6 +500,78 @@ extension ContentView {
         }
       }
       DispatchQueue.main.async { isSpeakupProveButtonEnabled = true }
+    }
+  }
+}
+
+extension ContentView {
+  func runEmpzkProveAction() {
+    textViewText += "Proving emp-zk sha256 (loopback)...\n"
+    isEmpzkProveButtonEnabled = false
+    DispatchQueue.global(qos: .userInitiated).async {
+      for len: UInt32 in [1024, 4096, 16384, 65536] {
+        do {
+          _ = try empzkProveSha256Loopback(len: len)
+          var times: [UInt64] = []
+          var last: EmpzkBenchResult?
+          for _ in 0..<3 {
+            let r = try empzkProveSha256Loopback(len: len)
+            times.append(r.totalMs)
+            last = r
+          }
+          let line =
+            "empzk sha256 \(len / 1024) KB: \(times.sorted()[1]) ms \(times) | P->V \(last!.proverSentBytes / 1024) KB, V->P \(last!.proverReceivedBytes / 1024) KB | accepted \(last!.verifierAccepted)"
+          print(line)
+          DispatchQueue.main.async { textViewText += line + "\n" }
+        } catch {
+          print("empzk error: \(error)")
+          DispatchQueue.main.async { textViewText += "emp-zk error: \(error)\n" }
+        }
+      }
+      DispatchQueue.main.async { isEmpzkProveButtonEnabled = true }
+    }
+  }
+
+  // SpeakUp vs emp-zk on the same statement, alternating A/B/B/A per size so drift hits both.
+  func runCompareBenchAction() {
+    let args = ProcessInfo.processInfo.arguments
+    let cap = args.firstIndex(of: "-speakup-cap").flatMap { UInt64(args[$0 + 1]) } ?? 2_000_000
+    let rounds = args.firstIndex(of: "-rounds").flatMap { Int(args[$0 + 1]) } ?? 6
+    DispatchQueue.global(qos: .userInitiated).async {
+      for len: UInt32 in [1024, 4096, 16384, 65536] {
+        do {
+          _ = try speakupProveSha256Loopback(len: len, chunkCap: cap)
+          _ = try empzkProveSha256Loopback(len: len)
+          var sp: [UInt64] = []
+          var ez: [UInt64] = []
+          var spBytes = (UInt64(0), UInt64(0))
+          var ezBytes = (UInt64(0), UInt64(0))
+          for i in 0..<rounds {
+            let order = i % 2 == 0 ? [0, 1] : [1, 0]
+            for which in order {
+              if which == 0 {
+                let r = try speakupProveSha256Loopback(len: len, chunkCap: cap)
+                precondition(r.verifierAccepted)
+                sp.append(r.totalMs)
+                spBytes = (r.proverSentBytes, r.proverReceivedBytes)
+              } else {
+                let r = try empzkProveSha256Loopback(len: len)
+                precondition(r.verifierAccepted)
+                ez.append(r.totalMs)
+                ezBytes = (r.proverSentBytes, r.proverReceivedBytes)
+              }
+            }
+          }
+          let med = { (xs: [UInt64]) in xs.sorted()[xs.count / 2] }
+          let line =
+            "compare sha256 \(len / 1024) KB | speakup \(med(sp)) ms \(sp) P->V \(spBytes.0 / 1024) KB V->P \(spBytes.1 / 1024) KB | empzk \(med(ez)) ms \(ez) P->V \(ezBytes.0 / 1024) KB V->P \(ezBytes.1 / 1024) KB"
+          print(line)
+          DispatchQueue.main.async { textViewText += line + "\n" }
+        } catch {
+          print("compare error: \(error)")
+        }
+      }
+      print("compare done")
     }
   }
 }
